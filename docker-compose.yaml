@@ -53,7 +53,8 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./uploads:/opt/airflow/uploads
+    - ./uploads:/opt/uploads
+    - ./settings:/opt/settings
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     redis:

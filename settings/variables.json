@@ -1,0 +1,6 @@
+{
+    "UPLOAD_DIR": "/opt/uploads",
+    "TEST": "/asd",
+    "GEONODE_ENDPOINT": "localhost"
+}
+

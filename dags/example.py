@@ -14,6 +14,7 @@ args = {
 }
 
 upload_dir = Variable.get('UPLOAD_DIR', '/opt/uploads')
+geonode_endpoint = Variable.get('GEONODE_ENDPOINT', 'localhost:8000')
 
 def _already_processed(ti):
     if 2 > 1:
@@ -65,7 +66,7 @@ def create_pipeline(dag_id,
         t4 = SimpleHttpOperator(
             task_id='update_layer',
             http_conn_id='geonode_conn_id',
-            endpoint='geonode_endpoint',
+            endpoint=geonode_endpoint,
             method='POST',
             data="{{ ti.xcom_pull(task_ids='geoprocessing')}}"
         )

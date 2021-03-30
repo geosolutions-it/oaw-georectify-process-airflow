@@ -25,7 +25,7 @@ def load_subdag(parent_dag_name, child_dag_name, args):
     dag_subdag = DAG(
         dag_id='{0}.{1}'.format(parent_dag_name, child_dag_name),
         default_args=args,
-        schedule_interval="@yearly",
+        schedule_interval="@once",
     )
     with dag_subdag:
         sd1 = BranchPythonOperator(
@@ -83,4 +83,4 @@ for item in [i for i in os.listdir(upload_dir) if i.endswith('tif')]:
         'owner': 'airflow',
         'start_date': datetime(2020, 3, 30)
     }
-    globals()[item] = create_pipeline(f'process-{item}', '@yearly', default_args)
+    globals()[item] = create_pipeline(f'process-{item}', '@once', default_args)

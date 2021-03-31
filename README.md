@@ -11,9 +11,16 @@ docker-compose up airflow-init
 docker-compose up
 ```
 Other times:
+
+Application run
 ```
 docker-compose up
 ```
+Rebuild image:
+```
+docker build --no-cache -t custom/airflow:latest .
+```
+
 
 # Import project variables:
 

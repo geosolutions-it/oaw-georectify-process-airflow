@@ -1,6 +1,5 @@
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
-from airflow.operators.dummy import DummyOperator
 from geotiflib.georectify import GeoRectifyFactory
 from geotiflib.geotiff import GeoTiff
 class GeoRectifyOperator(BaseOperator):

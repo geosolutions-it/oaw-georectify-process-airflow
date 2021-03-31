@@ -40,6 +40,7 @@ version: '3'
 x-airflow-common:
   &airflow-common
   build: .
+  image: custom/airflow:latest
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor

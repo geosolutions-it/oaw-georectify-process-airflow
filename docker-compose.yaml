@@ -39,7 +39,7 @@
 version: '3'
 x-airflow-common:
   &airflow-common
-  build: .
+  image: custom/airflow:latest
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -55,6 +55,7 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
     - ./uploads:/opt/uploads
     - ./settings:/opt/settings
+    - ./output:/opt/output
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     redis:

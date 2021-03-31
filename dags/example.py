@@ -78,7 +78,7 @@ def create_pipeline(dag_id,
     return dag
 
 
-for item in [i for i in os.listdir(upload_dir) if i.endswith('tif')]:
+for item in [i for i in os.listdir(upload_dir) if i.endswith('xxx')]:
     default_args = {
         'owner': 'airflow',
         'start_date': datetime(2020, 3, 30)

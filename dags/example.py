@@ -70,11 +70,10 @@ def create_pipeline(dag_id,
             method='POST',
             data="{{ ti.xcom_pull(task_ids='geoprocessing')}}"
         )
-        t5 = DummyOperator(task_id='pause_dag')
 
-        t1 >> t4 >> t5
+        t1 >> t4
 
-        t1 >> t4 >> t5
+        t1 >> t4
 
     return dag
 

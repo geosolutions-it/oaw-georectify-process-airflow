@@ -3,7 +3,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from geotiflib.georectify import GeoRectifyFactory
 from geotiflib.geotiff import GeoTiff
-
+import json
 
 class GeoRectifyOperator(BaseOperator):
     @apply_defaults
@@ -30,7 +30,7 @@ class GeoRectifyOperator(BaseOperator):
 
         geonode_json = {
             "args": [
-                f"{self.output_folder}/{self.filename}",
+                f"{self.output_folder}/{self.filename}",  # use {self.output_folder}
                 "--overwrite",
             ],
             "kwargs": {
@@ -41,4 +41,4 @@ class GeoRectifyOperator(BaseOperator):
                 "keywords": "key89,key344", # get from geotiff lib
             },
         }
-        return geonode_json
+        return json.dumps(geonode_json)

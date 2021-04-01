@@ -6,6 +6,7 @@ from airflow.providers.http.operators.http import SimpleHttpOperator
 from custom_operator.georectify import GeoRectifyOperator
 import re
 import os
+import json
 
 
 args = {
@@ -38,6 +39,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             method="POST",
             headers={"Content-Type": "application/json"},
             data="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
+            retry_delay=10
         )
 
         georectify >> update_layers

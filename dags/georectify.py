@@ -47,7 +47,10 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
     return dag
 
 
-for item in [i for i in os.listdir(upload_dir) if i.endswith("tif") and "_fin" not in i]:
+tif_available = [timf for timf in os.listdir(upload_dir) if timf.endswith('.tif')]
+tif_to_process =  [timf for timf in tif_available if os.path.exists(f'{upload_dir}/{timf}.points')]
+
+for item in tif_to_process:
 
     default_args = {"owner": "airflow", "start_date": datetime(2020, 3, 30)}
 

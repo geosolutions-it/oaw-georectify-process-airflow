@@ -3,6 +3,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from geotiflib.georectify import GeoRectifyFactory
 from geotiflib.geotiff import GeoTiff
+import json
 
 
 class GeoRectifyOperator(BaseOperator):
@@ -14,7 +15,12 @@ class GeoRectifyOperator(BaseOperator):
         self.filename = filename
 
     def execute(self, context):
-        # TODO check if the image is already processed
+        geo_img = GeoTiff(self.abs_filepath)
+        if geo_img.is_processed():
+            self.log.info(f"SKIP: GeoTiff img already processed: {self.abs_filepath}")
+            return self._geonode_payload()
+
+        self.log.info(f"PROCESSING: GeoTiff img start processing: {self.abs_filepath}")
         process = GeoRectifyFactory.create(
             input=self.abs_filepath,
             qgis_scripts="/usr/bin/",
@@ -26,8 +32,15 @@ class GeoRectifyOperator(BaseOperator):
 
         process.on_progress += on_progress
         process.process()
+
+        self.log.info(f"PROCESSING DONE: Retrieving metadata: {self.abs_filepath}")
+        
+        return self._geonode_payload()
+
+    def _geonode_payload(self):
         info = GeoTiff(self.abs_filepath).info()
         name = re.sub("\.tif$", "", self.filename)
+
         # TODO get required information from geotiff lib 
         # before create the json required for geonode
         geonode_json = {
@@ -43,5 +56,4 @@ class GeoRectifyOperator(BaseOperator):
                 "keywords": "key1,key89,key344", # get from geotiff lib
             },
         }
-        import json
         return json.dumps(geonode_json)

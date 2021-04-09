@@ -8,4 +8,4 @@ RUN sudo apt-get install -y build-essential gdal-bin \
     software-properties-common build-essential \
     git unzip gcc zlib1g-dev libgeos-dev libproj-dev binutils python3-gdal mlocate
 RUN pip install pygdal=="`gdal-config --version`.*"
-RUN pip install -r /opt/requirements.txt
+RUN pip install --no-cache-dir -r /opt/requirements.txt

@@ -33,7 +33,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             filename=filename
         )
         update_layers = SimpleHttpOperator(
-            task_id="update_layer",
+            task_id="import_layer",
             http_conn_id="geonode_conn_id",
             endpoint="api/management/importlayers/",
             method="POST",
@@ -48,9 +48,9 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
 
 
 tif_available = [timf for timf in os.listdir(upload_dir) if timf.endswith('.tif')]
-tif_to_process =  [timf for timf in tif_available if os.path.exists(f'{upload_dir}/{timf}.points')]
+#tif_to_process =  [timf for timf in tif_available if os.path.exists(f'{upload_dir}/{timf}.points')]
 
-for item in tif_to_process:
+for item in tif_available:
 
     default_args = {"owner": "airflow", "start_date": datetime(2020, 3, 30)}
 

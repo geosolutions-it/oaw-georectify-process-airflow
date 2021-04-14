@@ -4,13 +4,23 @@ Airflow based project to manage the geoprectify process
 
 # Start up the project:
 
+Copy `env.sample` and edit `.env`:
+
+```
+cp env-sample .env
+```
+
 First time only:
+
 ```
 mkdir ./logs
+#adjust to UID/GID to be used by airflow configured in `.env`
+sudo chown 50000:50000 ./logs
 docker build --no-cache -t custom/airflow:latest .
 docker-compose up airflow-init
 docker-compose up
 ```
+
 Other times:
 
 Application run

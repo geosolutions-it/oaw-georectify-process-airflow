@@ -39,6 +39,8 @@
 version: '3'
 x-airflow-common:
   &airflow-common
+  networks:
+    - geonode
   image: custom/airflow:latest
   environment:
     &airflow-common-env
@@ -49,9 +51,9 @@ x-airflow-common:
     AIRFLOW__CORE__FERNET_KEY: ''
   volumes:
     - ./dags:/opt/airflow/dags #  required for the dags.
-    - ./logs:/opt/airflow/logs  # required for logs metric
+    - ${AIRFLOW_LOGS}:/opt/airflow/logs  # required for logs metric
     - ./plugins:/opt/airflow/plugins #  plugin folder, required for custom plugin
-    - ./uploads:/opt/uploads #  should mount the FTP folder where the file are uploaded
+    - ${AIRFLOW_SFTP_UPLOADS}:/opt/uploads #  should mount the FTP folder where the file are uploaded
     - ./settings:/opt/settings #  internal application settings, not mandatory
     - ./output:/opt/output #  output folder for the generated tif imgs.
     - ./config/airflow.cfg:/opt/airflow/airflow.cfg #  required for load the configuration for airflow
@@ -64,6 +66,8 @@ x-airflow-common:
 
 services:
   postgres:
+    networks:
+      - geonode
     image: postgres:13
     environment:
       POSTGRES_USER: airflow
@@ -78,6 +82,8 @@ services:
     restart: always
 
   redis:
+    networks:
+      - geonode
     image: redis:latest
     ports:
       - 6379:6379
@@ -134,3 +140,8 @@ services:
 
 volumes:
   postgres-db-volume:
+
+networks: 
+  geonode:
+    external:
+      name: ${GEONODE_NETWORK}

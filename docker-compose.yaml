@@ -36,112 +36,113 @@
 #
 # Feel free to modify this file to suit your needs.
 ---
-version: '3'
-x-airflow-common:
-  &airflow-common
-  networks:
-    - geonode
-  image: custom/airflow:latest
-  environment:
-    &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__CORE__FERNET_KEY: ''
-  volumes:
-    - ./dags:/opt/airflow/dags #  required for the dags.
-    - ${AIRFLOW_LOGS}:/opt/airflow/logs  # required for logs metric
-    - ./plugins:/opt/airflow/plugins #  plugin folder, required for custom plugin
-    - ${AIRFLOW_SFTP_UPLOADS}:/opt/uploads #  should mount the FTP folder where the file are uploaded
-    - ./settings:/opt/settings #  internal application settings, not mandatory
-    - ./output:/opt/output #  output folder for the generated tif imgs.
-    - ./config/airflow.cfg:/opt/airflow/airflow.cfg #  required for load the configuration for airflow
-  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
-  depends_on:
-    redis:
-      condition: service_healthy
-    postgres:
-      condition: service_healthy
-
-services:
-  postgres:
+  version: '3'
+  x-airflow-common:
+    &airflow-common
     networks:
       - geonode
-    image: postgres:13
+    image: custom/airflow:latest
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      &airflow-common-env
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ''
+      GUNICORN_CMD_ARGS: "--worker-tmp-dir /dev/shm --forwarded-allow-ips '*'"
     volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 5s
-      retries: 5
-    restart: always
-
-  redis:
-    networks:
-      - geonode
-    image: redis:latest
-    ports:
-      - 6379:6379
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
-    restart: always
-
-  airflow-webserver:
-    <<: *airflow-common
-    command: webserver
-    ports:
-      - 9000:8080
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-    restart: always
-
-  airflow-scheduler:
-    <<: *airflow-common
-    command: scheduler
-    restart: always
-
-  airflow-worker:
-    <<: *airflow-common
-    command: celery worker
-    restart: always
-
-  airflow-init:
-    <<: *airflow-common
-    command: version
-    environment:
-      <<: *airflow-common-env
-      _AIRFLOW_DB_UPGRADE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-
-  flower:
-    <<: *airflow-common
-    command: celery flower
-    ports:
-      - 5555:5555
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-    restart: always
-
-volumes:
-  postgres-db-volume:
-
-networks: 
-  geonode:
-    external:
-      name: ${GEONODE_NETWORK}
+      - ./dags:/opt/airflow/dags #  required for the dags.
+      - ${AIRFLOW_LOGS}:/opt/airflow/logs  # required for logs metric
+      - ./plugins:/opt/airflow/plugins #  plugin folder, required for custom plugin
+      - ${AIRFLOW_SFTP_UPLOADS}:/opt/uploads #  should mount the FTP folder where the file are uploaded
+      - ./settings:/opt/settings #  internal application settings, not mandatory
+      - ./output:/opt/output #  output folder for the generated tif imgs.
+      - ./config/airflow.cfg:/opt/airflow/airflow.cfg #  required for load the configuration for airflow
+    user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+  
+  services:
+    postgres:
+      networks:
+        - geonode
+      image: postgres:13
+      environment:
+        POSTGRES_USER: airflow
+        POSTGRES_PASSWORD: airflow
+        POSTGRES_DB: airflow
+      volumes:
+        - postgres-db-volume:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD", "pg_isready", "-U", "airflow"]
+        interval: 5s
+        retries: 5
+      restart: always
+  
+    redis:
+      networks:
+        - geonode
+      image: redis:latest
+      ports:
+        - 6379:6379
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 5s
+        timeout: 30s
+        retries: 50
+      restart: always
+  
+    airflow-webserver:
+      <<: *airflow-common
+      command: webserver
+      ports:
+        - 9000:8080
+      healthcheck:
+        test: ["CMD", "curl", "--fail", "http://localhost:8080/airflow/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+      restart: always
+  
+    airflow-scheduler:
+      <<: *airflow-common
+      command: scheduler
+      restart: always
+  
+    airflow-worker:
+      <<: *airflow-common
+      command: celery worker
+      restart: always
+  
+    airflow-init:
+      <<: *airflow-common
+      command: version
+      environment:
+        <<: *airflow-common-env
+        _AIRFLOW_DB_UPGRADE: 'true'
+        _AIRFLOW_WWW_USER_CREATE: 'true'
+        _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+        _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+  
+    flower:
+      <<: *airflow-common
+      command: celery flower
+      ports:
+        - 5555:5555
+      healthcheck:
+        test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+      restart: always
+  
+  volumes:
+    postgres-db-volume:
+  
+  networks: 
+    geonode:
+      external:
+        name: ${GEONODE_NETWORK}  

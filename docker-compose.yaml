@@ -50,6 +50,7 @@
       AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
       AIRFLOW__CORE__FERNET_KEY: ''
       GUNICORN_CMD_ARGS: "--worker-tmp-dir /dev/shm --forwarded-allow-ips '*'"
+      AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: "True"
     volumes:
       - ./dags:/opt/airflow/dags #  required for the dags.
       - ${AIRFLOW_LOGS}:/opt/airflow/logs  # required for logs metric

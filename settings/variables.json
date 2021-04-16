@@ -1,6 +1,5 @@
 {
     "UPLOAD_DIR": "/opt/uploads",
-    "TEST": "/asd",
-    "GEONODE_ENDPOINT": "localhost"
+    "GEONODE_ENDPOINT": "/api/v2/management/importlayers/"
 }
 

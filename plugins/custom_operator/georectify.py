@@ -18,7 +18,7 @@ class GeoRectifyOperator(BaseOperator):
         geo_img = GeoTiff(self.abs_filepath)
         if geo_img.is_processed():
             self.log.info(f"SKIP: GeoTiff img already processed: {self.abs_filepath}")
-            return self._geonode_payload()
+            return self._geonode_payload(already_processed=True)
 
         self.log.info(f"PROCESSING: GeoTiff img start processing: {self.abs_filepath}")
         process = GeoRectifyFactory.create(
@@ -37,15 +37,16 @@ class GeoRectifyOperator(BaseOperator):
         
         return self._geonode_payload()
 
-    def _geonode_payload(self):
+    def _geonode_payload(self, already_processed=False):
         info = GeoTiff(self.abs_filepath).info()
         name = re.sub("\.tif$", "", self.filename)
 
         # TODO get required information from geotiff lib 
         # before create the json required for geonode
+        to_upload_filepath = f"{self.output_folder}/{self.filename}" if not already_processed else self.abs_filepath
         geonode_json = {
             "args": [
-                f"{self.output_folder}/{self.filename}",  # use {self.output_folder}
+                to_upload_filepath,
                 "--overwrite",
             ],
             "kwargs": {

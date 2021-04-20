@@ -41,7 +41,7 @@
     &airflow-common
     networks:
       - geonode
-    image: custom/airflow:latest
+    image: custom/airflow:latest2
     environment:
       &airflow-common-env
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor

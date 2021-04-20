@@ -1,7 +1,6 @@
 from io import BufferedReader, IOBase
 import os
 import re
-from airflow.models import connection
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 import requests
@@ -20,6 +19,7 @@ class GeoNodeUploaderOperator(BaseOperator):
         custom_metadata: dict,
         connection: str,
         filename: str,
+        output_dir: str,
         call_delay: int = 10,
         **kwargs,
     ):
@@ -28,12 +28,19 @@ class GeoNodeUploaderOperator(BaseOperator):
         self.custom_metadata = custom_metadata
         self.connection = connection
         self.call_delay = call_delay
+        self.output_dir = output_dir
         self.filename = filename
 
     def execute(self, context):
-        self.log.info("Starting upload for file: {self.file_to_upload}")
+        self.log.info(f"Starting upload for file: {self.output_dir}/{self.filename}")
+        _file = f"{self.output_dir}/{self.filename}"
+        self.log.info(f"Checking if the img is available in the output path: {_file}")
 
-        _file = self.file_to_upload
+        x = os.path.exists(f"{self.output_dir}/{self.filename}")
+        if not x:
+            self.log.info(f"Image already processed, taking input path: {self.file_to_upload}")
+            _file = self.file_to_upload
+
         base, ext = os.path.splitext(_file)
         params = {
             # make public since wms client doesn't do authentication

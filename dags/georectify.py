@@ -38,6 +38,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             task_id="geonode_upload",
             default_args=default_args,
             file_to_upload=abs_filepath,
+            output_dir=output_dir,
             dag=dag,
             filename=filename,
             custom_metadata="{{ ti.xcom_pull(task_ids='geoprocessing')}}",

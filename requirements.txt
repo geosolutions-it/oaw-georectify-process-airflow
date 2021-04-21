@@ -1,2 +1,2 @@
 black
-git+https://github.com/geosolutions-it/oaw-georectify-process-alg.git@issue-gdal-commands
+git+https://github.com/geosolutions-it/oaw-georectify-process-alg.git@master

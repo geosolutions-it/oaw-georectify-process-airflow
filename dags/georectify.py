@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.providers.http.operators.http import SimpleHttpOperator
 from custom_operator.georectify import GeoRectifyOperator
+from custom_operator.geonode import GeoNodeUploaderOperator
 import re
 import os
 import json
@@ -32,23 +33,24 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             dag=dag,
             filename=filename
         )
-        update_layers = SimpleHttpOperator(
-            task_id="import_layer",
-            http_conn_id="geonode_conn_id",
-            endpoint="api/management/importlayers/",
-            method="POST",
-            headers={"Content-Type": "application/json"},
-            data="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
-            retry_delay=10
+
+        geonode_import = GeoNodeUploaderOperator(
+            task_id="geonode_upload",
+            default_args=default_args,
+            file_to_upload=abs_filepath,
+            output_dir=output_dir,
+            dag=dag,
+            filename=filename,
+            custom_metadata="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
+            connection="geonode_conn_id"
         )
 
-        georectify >> update_layers
+        georectify >> geonode_import
 
     return dag
 
 
 tif_available = [timf for timf in os.listdir(upload_dir) if timf.endswith('.tif')]
-#tif_to_process =  [timf for timf in tif_available if os.path.exists(f'{upload_dir}/{timf}.points')]
 
 for item in tif_available:
 

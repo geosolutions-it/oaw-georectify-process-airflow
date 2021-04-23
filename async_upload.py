@@ -134,10 +134,10 @@ if __name__ == "__main__":
     parser.add_argument('--host', help='Example: http://localhost.com')
     parser.add_argument('--username', help='Example: foo')
     parser.add_argument('--password', help='Example: bar')
-    parser.add_argument('--file_path', help='Example: /home/user/files/')
+    parser.add_argument('--file_path', help='Example: /home/user/files/x.tif or /home/user/files/x.shp')
 
     args=parser.parse_args()
-    print(args)
+
     GeoNodeUploaderOperator(
         host=args.host,
         username=args.username,

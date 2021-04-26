@@ -90,7 +90,7 @@ class GeoNodeUploader():
 
             if isinstance(params.get("tif_file"), IOBase):
                 params["tif_file"].close()
-
+            print(response.text)
             print("Getting import_id")
             import_id = int(response.json()["redirect_to"].split("?id=")[1].split("&")[0])
             print(f"ImportID found with ID: {import_id}")
@@ -114,17 +114,20 @@ class GeoNodeUploader():
 
             print(f"Checking upload status")
 
-            self.check_status(client, upload_id)
+            self.check_status(client, upload_id, 1, import_id)
+            print("Upload process completed")
 
-    def check_status(self, client, upload_id):
+    def check_status(self, client, upload_id, counter, import_id):
+        if counter == 5:
+            client.get(f"{self.host}/upload/final?id={import_id}")
         r = client.get(f"{self.host}/api/v2/uploads/{upload_id}")
         print(r.json())
         state = r.json()["upload"]["state"]
         if state != "PROCESSED":
-            print("Process not finished yet, waiting")
+            counter += 1
+            print(f"Process not finished yet, waiting")
             time.sleep(self.call_delay)
-            self.check_status(client, upload_id)
-        print("Upload process completed")
+            self.check_status(client, upload_id, counter, import_id)
         return r.json()
 
     @staticmethod

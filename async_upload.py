@@ -92,7 +92,7 @@ class GeoNodeUploader():
                 params["tif_file"].close()
 
             print("Getting import_id")
-            import_id = int(response.json()["redirect_to"].split("?id=")[1])
+            import_id = int(response.json()["redirect_to"].split("?id=")[1].split("&")[0])
             print(f"ImportID found with ID: {import_id}")
 
             print(f"Getting upload_list")

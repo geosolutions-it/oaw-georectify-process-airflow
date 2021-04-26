@@ -29,7 +29,6 @@ class GeoNodeUploader():
             print("The selected path does not exist")
         
         for file in os.listdir(self.folder_path):
-            print(f"Starting upload for file: {self.folder_path}/{file}")
             _file = f"{self.folder_path}/{file}"
             spatial_files = ("dbf_file", "shx_file", "prj_file")
 
@@ -56,6 +55,7 @@ class GeoNodeUploader():
                 params["tif_file"] = open(file_path, "rb")
             else:
                 continue
+            print(f"Starting upload for file: {self.folder_path}/{file}")
 
             print(f"Generating params dict: {params}")
 

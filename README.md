@@ -18,6 +18,7 @@ mkdir ./logs
 sudo chown 50000:50000 ./logs
 sudo chown 50000:50000 ./output
 docker build --no-cache -t custom/airflow:latest .
+docker network create oaw_geonode_default
 docker-compose up airflow-init
 docker-compose up
 ```

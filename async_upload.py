@@ -7,11 +7,11 @@ import argparse
 
 parser=argparse.ArgumentParser()
 
-class GeoNodeUploaderOperator():
+class GeoNodeUploader():
     def __init__(
         self,
         host: str,
-        file_path: str,
+        folder_path: str,
         username: str,
         password: str,
         call_delay: int = 10,
@@ -19,97 +19,102 @@ class GeoNodeUploaderOperator():
     ):
         super().__init__(**kwargs)
         self.host = host
-        self.file_path = file_path
+        self.folder_path = folder_path
         self.username = username
         self.password = password
         self.call_delay = call_delay
 
     def execute(self):
-        print(f"Starting upload for file: {self.file_path}")
-        _file = f"{self.file_path}"
+        if not os.path.exists(self.folder_path):
+            print("The selected path does not exist")
+        
+        for file in os.listdir(self.folder_path):
+            print(f"Starting upload for file: {self.folder_path}/{file}")
+            _file = f"{self.folder_path}/{file}"
+            spatial_files = ("dbf_file", "shx_file", "prj_file")
 
-        spatial_files = ("dbf_file", "shx_file", "prj_file")
+            base, ext = os.path.splitext(_file)
+            params = {
+                # make public since wms client doesn't do authentication
+                "permissions": '{ "users": {"AnonymousUser": ["view_resourcebase"]} , "groups":{}}',  # to be decided
+                "time": "false",
+                "layer_title": file,
+                "time": "false",
+                "charset": "UTF-8",
+            }
 
-        base, ext = os.path.splitext(_file)
-        params = {
-            # make public since wms client doesn't do authentication
-            "permissions": '{ "users": {"AnonymousUser": ["view_resourcebase"]} , "groups":{}}',  # to be decided
-            "time": "false",
-            "layer_title": "resource",
-            "time": "false",
-            "charset": "UTF-8",
-        }
+            if ext.lower() == ".shp":
+                for spatial_file in spatial_files:
+                    ext, _ = spatial_file.split("_")
+                    file_path = f"{base}.{ext}"
+                    # sometimes a shapefile is missing an extra file,
+                    # allow for that
+                    if os.path.exists(file_path):
+                        params[spatial_file] = open(file_path, "rb")
+            elif ext.lower() == ".tif":
+                file_path = base + ext
+                params["tif_file"] = open(file_path, "rb")
+            else:
+                continue
 
-        if ext.lower() == ".shp":
-            for spatial_file in spatial_files:
-                ext, _ = spatial_file.split("_")
-                file_path = f"{base}.{ext}"
-                # sometimes a shapefile is missing an extra file,
-                # allow for that
-                if os.path.exists(file_path):
-                    params[spatial_file] = open(file_path, "rb")
-        elif ext.lower() == ".tif":
-            file_path = base + ext
-            params["tif_file"] = open(file_path, "rb")
+            print(f"Generating params dict: {params}")
 
-        print(f"Generating params dict: {params}")
+            files = {}
 
-        files = {}
+            print("Opening client session")
 
-        print("Opening client session")
+            client = requests.session()
 
-        client = requests.session()
+            print("Opening Files")
+            with open(_file, "rb") as base_file:
+                params["base_file"] = base_file
+                for name, value in params.items():
+                    if isinstance(value, BufferedReader):
+                        files[name] = (os.path.basename(value.name), value)
+                        params[name] = os.path.basename(value.name)
 
-        print("Opening Files")
-        with open(_file, "rb") as base_file:
-            params["base_file"] = base_file
-            for name, value in params.items():
-                if isinstance(value, BufferedReader):
-                    files[name] = (os.path.basename(value.name), value)
-                    params[name] = os.path.basename(value.name)
+                print(
+                    f"Sending PUT request to geonode: {self.host}/api/v2/uploads/upload/"
+                )
 
-            print(
-                f"Sending PUT request to geonode: {self.host}/api/v2/uploads/upload/"
-            )
+                response = client.put(
+                    f"{self.host}/api/v2/uploads/upload/",
+                    auth=HTTPBasicAuth(self.username, self.password),
+                    data=params,
+                    files=files,
+                )
 
-            response = client.put(
-                f"{self.host}/api/v2/uploads/upload/",
-                auth=HTTPBasicAuth(self.username, self.password),
-                data=params,
-                files=files,
-            )
+                print(f"Geonode response with status code {response.status_code}")
 
-            print(f"Geonode response with status code {response.status_code}")
+            print("Closing spatial files")
 
-        print("Closing spatial files")
+            if isinstance(params.get("tif_file"), IOBase):
+                params["tif_file"].close()
 
-        if isinstance(params.get("tif_file"), IOBase):
-            params["tif_file"].close()
+            print("Getting import_id")
+            import_id = int(response.json()["redirect_to"].split("?id=")[1])
+            print(f"ImportID found with ID: {import_id}")
 
-        print("Getting import_id")
-        import_id = int(response.json()["redirect_to"].split("?id=")[1])
-        print(f"ImportID found with ID: {import_id}")
+            print(f"Getting upload_list")
+            upload_response = client.get(f"{self.host}/api/v2/uploads/")
 
-        print(f"Getting upload_list")
-        upload_response = client.get(f"{self.host}/api/v2/uploads/")
+            print(f"Extraction of upload_id")
 
-        print(f"Extraction of upload_id")
+            upload_id = self._get_upload_id(upload_response, import_id)
 
-        upload_id = self._get_upload_id(upload_response, import_id)
+            print(f"UploadID found {upload_id}")
 
-        print(f"UploadID found {upload_id}")
+            print(f"Calling upload detail page")
+            client.get(f"{self.host}/api/v2/uploads/{upload_id}")
 
-        print(f"Calling upload detail page")
-        client.get(f"{self.host}/api/v2/uploads/{upload_id}")
+            print(f"Calling final upload page")
+            client.get(f"{self.host}/upload/final?id={import_id}")
 
-        print(f"Calling final upload page")
-        client.get(f"{self.host}/upload/final?id={import_id}")
+            print(f"Layer added in GeoNode")
 
-        print(f"Layer added in GeoNode")
+            print(f"Checking upload status")
 
-        print(f"Checking upload status")
-
-        return self.check_status(client, upload_id)
+            self.check_status(client, upload_id)
 
     def check_status(self, client, upload_id):
         r = client.get(f"{self.host}/api/v2/uploads/{upload_id}")
@@ -134,13 +139,13 @@ if __name__ == "__main__":
     parser.add_argument('--host', help='Example: http://localhost.com')
     parser.add_argument('--username', help='Example: foo')
     parser.add_argument('--password', help='Example: bar')
-    parser.add_argument('--file_path', help='Example: /home/user/files/x.tif or /home/user/files/x.shp')
+    parser.add_argument('--folder_path', help='Example: /home/user/files/')
 
     args=parser.parse_args()
 
-    GeoNodeUploaderOperator(
+    GeoNodeUploader(
         host=args.host,
         username=args.username,
         password=args.password,
-        file_path=args.file_path
+        folder_path=args.folder_path
     ).execute()

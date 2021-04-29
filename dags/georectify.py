@@ -2,12 +2,10 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.providers.http.operators.http import SimpleHttpOperator
 from custom_operator.georectify import GeoRectifyOperator
 from custom_operator.geonode import GeoNodeUploaderOperator
 import re
 import os
-import json
 
 
 args = {

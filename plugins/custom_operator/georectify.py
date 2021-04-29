@@ -38,23 +38,17 @@ class GeoRectifyOperator(BaseOperator):
         return self._geonode_payload()
 
     def _geonode_payload(self, already_processed=False):
-        info = GeoTiff(self.abs_filepath).info()
-        name = re.sub("\.tif$", "", self.filename)
+        metadata = GeoTiff(self.abs_filepath).oaw_metadata_dict()
 
-        # TODO get required information from geotiff lib 
-        # before create the json required for geonode
-        to_upload_filepath = f"{self.output_folder}/{self.filename}" if not already_processed else self.abs_filepath
         geonode_json = {
-            "args": [
-                to_upload_filepath,
-                "--overwrite",
-            ],
-            "kwargs": {
-                "user": "admin",
-                "name": name,
-                "title": "Layer name",  # get from geotiff lib
-                "regions": "global", # get from geotiff lib
-                "keywords": "key1,key89,key344", # get from geotiff lib
-            },
-        }
+                "title": metadata.get('title', None),
+                "date": metadata.get('date', None),
+                "edition":  metadata.get('edition', None),
+                "abstract": metadata.get('description', None),
+                "purpose": metadata.get('source', None),
+                "keywords": [k.replace(' ', '') for k in metadata.get('subject', None).split(';')],
+                "supplemental_information":  metadata.get('relation', None),
+                "data_quality_statement": metadata.get('format', None),
+                "typename": metadata.get('identifier', None),
+            }
         return json.dumps(geonode_json)

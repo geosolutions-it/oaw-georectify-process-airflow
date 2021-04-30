@@ -27,7 +27,7 @@ class GeoRectifyOperator(BaseOperator):
             input=self.abs_filepath,
             qgis_scripts="/usr/bin/",
             output_folder=self.output_folder,
-            min_points=ast.literal_eval(Variable.get('MIN_POINTS', -1))
+            min_points=ast.literal_eval(Variable.get('MIN_POINTS', "-1"))
         )
 
         def on_progress(message):

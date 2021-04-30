@@ -3,7 +3,9 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from geotiflib.georectify import GeoRectifyFactory
 from geotiflib.geotiff import GeoTiff
+from airflow.models.variable import Variable
 import json
+import ast
 
 
 class GeoRectifyOperator(BaseOperator):
@@ -25,6 +27,7 @@ class GeoRectifyOperator(BaseOperator):
             input=self.abs_filepath,
             qgis_scripts="/usr/bin/",
             output_folder=self.output_folder,
+            min_points=ast.literal_eval(Variable.get('MIN_POINTS', -1))
         )
 
         def on_progress(message):

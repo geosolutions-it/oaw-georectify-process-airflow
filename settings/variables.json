@@ -1,5 +1,6 @@
 {
     "UPLOAD_DIR": "/opt/uploads",
-    "GEONODE_ENDPOINT": "/api/v2/management/importlayers/"
+    "GEONODE_ENDPOINT": "/api/v2/management/importlayers/",
+    "MIN_POINTS": "30"
 }
 

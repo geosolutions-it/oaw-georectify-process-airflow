@@ -1,13 +1,14 @@
 from io import BufferedReader, IOBase
 import os
-import re
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 import requests
 import time
 from airflow.hooks.base_hook import BaseHook
+from airflow.exceptions import AirflowBadRequest, AirflowException
 from requests.models import HTTPBasicAuth
-
+from json2xml import json2xml
+from json2xml.utils import readfromstring
 
 class GeoNodeUploaderOperator(BaseOperator):
     template_fields = ["custom_metadata"]
@@ -42,11 +43,20 @@ class GeoNodeUploaderOperator(BaseOperator):
             _file = self.file_to_upload
 
         base, ext = os.path.splitext(_file)
+        self.log.info(f"Metadata extracted: {type(self.custom_metadata)}")
+
+        data = readfromstring(self.custom_metadata)
+
+        self.log.info(f"Saving Metadata in temp file: {self.filename}")
+
+        with open(f"/tmp/{self.filename}.xml", 'w+') as meta:
+                meta.write(json2xml.Json2xml(data).to_xml())
+
+        self.log.info(f"Metadata Converted: {json2xml.Json2xml(data).to_xml()}")
+
         params = {
-            # make public since wms client doesn't do authentication
-            "permissions": '{ "users": {"AnonymousUser": ["view_resourcebase"]} , "groups":{}}',  # to be decided
+            "permissions": '{ "users": {"AnonymousUser": ["view_resourcebase"]} , "groups":{}}',
             "time": "false",
-            "layer_title": re.sub("\.tif$", "", self.filename),
             "time": "false",
             "charset": "UTF-8",
         }
@@ -54,6 +64,9 @@ class GeoNodeUploaderOperator(BaseOperator):
         if ext.lower() == ".tif":
             file_path = base + ext
             params["tif_file"] = open(file_path, "rb")
+
+        params['xml_file'] = open(f"/tmp/{self.filename}.xml", 'rb')
+
         self.log.info(f"Generating params dict: {params}")
 
         files = {}
@@ -71,11 +84,11 @@ class GeoNodeUploaderOperator(BaseOperator):
                     params[name] = os.path.basename(value.name)
 
             self.log.info(
-                f"Sending PUT request to geonode: http://{conn.host}/api/v2/uploads/upload/"
+                f"Sending PUT request to geonode: http://{conn.host}:{conn.port}/api/v2/uploads/upload/"
             )
 
             response = client.put(
-                f"http://{conn.host}/api/v2/uploads/upload/",
+                f"http://{conn.host}:{conn.port}/api/v2/uploads/upload/",
                 auth=HTTPBasicAuth(conn.login, conn.password),
                 data=params,
                 files=files,
@@ -88,12 +101,18 @@ class GeoNodeUploaderOperator(BaseOperator):
         if isinstance(params.get("tif_file"), IOBase):
             params["tif_file"].close()
 
+        if isinstance(params.get("xml_file"), IOBase):
+            params["xml_file"].close()
+
+        if response.status_code != 201:
+            raise Exception("An error has occured with the communication with GeoNode: {response.json()}")
+
         self.log.info("Getting import_id")
         import_id = int(response.json()["redirect_to"].split("?id=")[1])
         self.log.info(f"ImportID found with ID: {import_id}")
 
         self.log.info(f"Getting upload_list")
-        upload_response = client.get(f"http://{conn.host}/api/v2/uploads/")
+        upload_response = client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/")
 
         self.log.info(f"Extraction of upload_id")
 
@@ -102,26 +121,31 @@ class GeoNodeUploaderOperator(BaseOperator):
         self.log.info(f"UploadID found {upload_id}")
 
         self.log.info(f"Calling upload detail page")
-        client.get(f"http://{conn.host}/api/v2/uploads/{upload_id}")
+        client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
 
         self.log.info(f"Calling final upload page")
-        client.get(f"http://{conn.host}/upload/final?id={import_id}")
+        client.get(f"http://{conn.host}:{conn.port}/upload/final?id={import_id}")
 
         self.log.info(f"Layer added in GeoNode")
 
         self.log.info(f"Checking upload status")
 
-        return self.check_status(client, upload_id, conn)
+        response = self.check_status(client, upload_id, conn)
+
+        self.log.info("Upload process completed")
+        return response
 
     def check_status(self, client, upload_id, conn):
-        r = client.get(f"http://{conn.host}/api/v2/uploads/{upload_id}")
-        print(r.json())
+        r = client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
         state = r.json()["upload"]["state"]
+
+        if state in ['INVALID', 'PENDING', 'WAITING']:
+            raise AirflowException("Some error has occured during upload, please check the logs")
+
         if state != "PROCESSED":
             self.log.info("Process not finished yet, waiting")
             time.sleep(self.call_delay)
             self.check_status(client, upload_id, conn)
-        self.log.info("Upload process completed")
         return r.json()
 
     @staticmethod

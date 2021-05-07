@@ -42,14 +42,14 @@ class GeoRectifyOperator(BaseOperator):
 
     def _geonode_payload(self, already_processed=False):
         metadata = GeoTiff(self.abs_filepath).oaw_metadata_dict()
-
+        keywords = list(set([k.replace(' ', '') for k in metadata.get('subject', []).replace("&amp;", '&').replace("|", ";").split(';')]))
         geonode_json = {
                 "title": metadata.get('title', None).replace("+", " "),
                 "date": metadata.get('date', None),
                 "edition":  metadata.get('edition', None),
                 "abstract": metadata.get('description', None).replace("+", " "),
                 #"purpose": metadata.get('source', None),
-                "keywords": list(set([k.replace(' ', '') for k in metadata.get('subject', []).replace("&amp;", '&').replace("|", ";").split(';')])),
+                "keywords": [k.replace("&", '&amp;') for k in keywords],
                 "supplemental_information":  metadata.get('source', None).replace("+", " "),
                 "data_quality_statement": metadata.get('format', None).replace("+", " "),
                 "typename": metadata.get('identifier', None),

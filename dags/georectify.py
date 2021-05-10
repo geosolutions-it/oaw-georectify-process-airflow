@@ -2,11 +2,9 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.models import Variable
-from sqlalchemy.sql.elements import outparam
 from custom_operator.georectify import GeoRectifyOperator
 from custom_operator.geonode import GeoNodeUploaderOperator
 from custom_operator.rename_file import FileRenameOperator
-from airflow.operators.python import PythonOperator 
 import re
 import os
 

@@ -6,7 +6,7 @@ import requests
 import time
 import json
 from airflow.hooks.base_hook import BaseHook
-from airflow.exceptions import AirflowBadRequest, AirflowException
+from airflow.exceptions import AirflowException
 from requests.models import HTTPBasicAuth
 from json2xml import json2xml
 from json2xml.utils import readfromstring

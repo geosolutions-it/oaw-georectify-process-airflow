@@ -1,4 +1,3 @@
-import re
 from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from geotiflib.georectify import GeoRectifyFactory

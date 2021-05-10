@@ -4,6 +4,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.utils.decorators import apply_defaults
 import requests
 import time
+import json
 from airflow.hooks.base_hook import BaseHook
 from airflow.exceptions import AirflowBadRequest, AirflowException
 from requests.models import HTTPBasicAuth
@@ -16,34 +17,23 @@ class GeoNodeUploaderOperator(BaseOperator):
     @apply_defaults
     def __init__(
         self,
-        file_to_upload: str,
         custom_metadata: dict,
         connection: str,
-        filename: str,
-        output_dir: str,
         call_delay: int = 10,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.file_to_upload = file_to_upload
         self.custom_metadata = custom_metadata
         self.connection = connection
         self.call_delay = call_delay
-        self.output_dir = output_dir
-        self.filename = filename
+        self.filename = None
 
     def execute(self, context):
-        self.log.info(f"Starting upload for file: {self.output_dir}/{self.filename}")
-        _file = f"{self.output_dir}/{self.filename}"
-        self.log.info(f"Checking if the img is available in the output path: {_file}")
-
-        x = os.path.exists(f"{self.output_dir}/{self.filename}")
-        if not x:
-            self.log.info(f"Image already processed, taking input path: {self.file_to_upload}")
-            _file = self.file_to_upload
+        _file = json.loads(self.custom_metadata).pop('updated_filename')
+        self.filename = os.path.basename(_file)
 
         base, ext = os.path.splitext(_file)
-        self.log.info(f"Metadata extracted: {type(self.custom_metadata)}")
+        self.log.info(f"Metadata extracted: {self.custom_metadata}")
 
         data = readfromstring(self.custom_metadata)
 

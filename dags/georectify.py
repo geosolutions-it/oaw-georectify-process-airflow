@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.models import Variable
 from custom_operator.georectify import GeoRectifyOperator
 from custom_operator.geonode import GeoNodeUploaderOperator
+from custom_operator.rename_file import FileRenameOperator
 import re
 import os
 
@@ -32,18 +33,24 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             filename=filename
         )
 
-        geonode_import = GeoNodeUploaderOperator(
-            task_id="geonode_upload",
+        rename_file = FileRenameOperator(
+            task_id="rename_file",
             default_args=default_args,
             file_to_upload=abs_filepath,
             output_dir=output_dir,
+            prev_xcom="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
+            filename=filename
+        )
+
+        geonode_import = GeoNodeUploaderOperator(
+            task_id="geonode_upload",
+            default_args=default_args,
             dag=dag,
-            filename=filename,
-            custom_metadata="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
+            custom_metadata="{{ ti.xcom_pull(task_ids='rename_file')}}",
             connection="geonode_conn_id"
         )
 
-        georectify >> geonode_import
+        georectify >> rename_file >> geonode_import
 
     return dag
 

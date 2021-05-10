@@ -19,7 +19,7 @@ class GeoRectifyOperator(BaseOperator):
         geo_img = GeoTiff(self.abs_filepath)
         if geo_img.is_processed():
             self.log.info(f"SKIP: GeoTiff img already processed: {self.abs_filepath}")
-            return self._geonode_payload(already_processed=True)
+            return self._geonode_payload()
 
         self.log.info(f"PROCESSING: GeoTiff img start processing: {self.abs_filepath}")
         process = GeoRectifyFactory.create(

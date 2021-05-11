@@ -48,7 +48,7 @@ class GeoRectifyOperator(BaseOperator):
                 "edition":  metadata.get('edition', None),
                 "abstract": metadata.get('description', None).replace("+", " "),
                 #"purpose": metadata.get('source', None),
-                "keywords": [k.replace("&", '&amp;') for k in keywords],
+                "keywords": keywords,
                 "supplemental_information":  metadata.get('source', None).replace("+", " "),
                 "data_quality_statement": metadata.get('format', None).replace("+", " "),
                 "typename": metadata.get('identifier', None),

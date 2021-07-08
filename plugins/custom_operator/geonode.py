@@ -98,9 +98,11 @@ class GeoNodeUploaderOperator(BaseOperator):
             raise Exception("An error has occured with the communication with GeoNode: {response.json()}")
 
         self.log.info("Getting import_id")
+        time.sleep(self.call_delay)                
         import_id = int(response.json()["redirect_to"].split("?id=")[1])
         self.log.info(f"ImportID found with ID: {import_id}")
 
+        time.sleep(self.call_delay)
         self.log.info(f"Getting upload_list")
         upload_response = client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/")
 
@@ -113,6 +115,7 @@ class GeoNodeUploaderOperator(BaseOperator):
         self.log.info(f"Calling upload detail page")
         client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
 
+        time.sleep(self.call_delay)
         self.log.info(f"Calling final upload page")
         client.get(f"http://{conn.host}:{conn.port}/upload/final?id={import_id}")
 

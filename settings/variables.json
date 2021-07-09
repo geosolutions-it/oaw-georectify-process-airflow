@@ -1,6 +1,6 @@
 {
-    "UPLOAD_DIR": "/opt/uploads",
-    "GEONODE_ENDPOINT": "/api/v2/management/importlayers/",
-    "MIN_POINTS": "30"
+    "MIN_POINTS": "30",
+    "WAITING_DELAY_IN_SECONDS": "30",
+    "DAG_MAX_RETRIES": "3"
 }
 

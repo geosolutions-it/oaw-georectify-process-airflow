@@ -1,6 +1,6 @@
 {
     "MIN_POINTS": "30",
-    "WAITING_DELAY_IN_SECONDS": "30",
-    "DAG_MAX_RETRIES": "3"
+    "WAITING_DELAY_IN_MINUTES": "3",
+    "DAG_MAX_RETRIES": "5"
 }
 

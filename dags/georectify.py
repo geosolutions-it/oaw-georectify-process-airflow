@@ -10,8 +10,8 @@ from custom_operator.georectify import GeoRectifyOperator
 from custom_operator.rename_file import FileRenameOperator
 
 
-WAITING_DELAY_IN_MINUTES = Variable.get("WAITING_DELAY_IN_MINUTES", 3)
-DAG_MAX_RETRIES = Variable.get("DAG_MAX_RETRIES", 5)
+WAITING_DELAY_IN_MINUTES = Variable.get("WAITING_DELAY_IN_MINUTES", 3, deserialize_json=True)
+DAG_MAX_RETRIES = Variable.get("DAG_MAX_RETRIES", 5, deserialize_json=True)
 
 upload_dir = Variable.get("UPLOAD_DIR", "/opt/uploads")
 output_dir = Variable.get("OUTPUT_DIR", "/opt/output")

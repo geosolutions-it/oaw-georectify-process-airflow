@@ -47,7 +47,6 @@ class GeoNodeUploaderOperator(BaseOperator):
         params = {
             "permissions": '{ "users": {"AnonymousUser": ["view_resourcebase"]} , "groups":{}}',
             "time": "false",
-            "time": "false",
             "charset": "UTF-8",
         }
 

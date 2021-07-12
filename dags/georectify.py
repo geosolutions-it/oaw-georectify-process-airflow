@@ -1,17 +1,17 @@
-from datetime import datetime
+import os
+import re
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from custom_operator.georectify import GeoRectifyOperator
+
 from custom_operator.geonode import GeoNodeUploaderOperator
+from custom_operator.georectify import GeoRectifyOperator
 from custom_operator.rename_file import FileRenameOperator
-import re
-import os
 
 
-args = {
-    "owner": "airflow",
-}
+WAITING_DELAY_IN_MINUTES = Variable.get("WAITING_DELAY_IN_MINUTES", 3, deserialize_json=True)
+DAG_MAX_RETRIES = Variable.get("DAG_MAX_RETRIES", 5, deserialize_json=True)
 
 upload_dir = Variable.get("UPLOAD_DIR", "/opt/uploads")
 output_dir = Variable.get("OUTPUT_DIR", "/opt/output")
@@ -20,7 +20,10 @@ output_dir = Variable.get("OUTPUT_DIR", "/opt/output")
 def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
 
     dag = DAG(
-        dag_id, schedule_interval=schedule, default_args=default_args, max_active_runs=1
+        dag_id,
+        schedule_interval=schedule,
+        default_args=default_args,
+        max_active_runs=1
     )
 
     with dag:
@@ -30,7 +33,9 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             default_args=default_args,
             output_folder=output_dir,
             dag=dag,
-            filename=filename
+            filename=filename,
+            retries=DAG_MAX_RETRIES,
+            retry_delay=timedelta(minutes=WAITING_DELAY_IN_MINUTES)
         )
 
         rename_file = FileRenameOperator(
@@ -39,7 +44,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             file_to_upload=abs_filepath,
             output_dir=output_dir,
             prev_xcom="{{ ti.xcom_pull(task_ids='geoprocessing')}}",
-            filename=filename
+            filename=filename,
         )
 
         geonode_import = GeoNodeUploaderOperator(
@@ -47,7 +52,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             default_args=default_args,
             dag=dag,
             custom_metadata="{{ ti.xcom_pull(task_ids='rename_file')}}",
-            connection="geonode_conn_id"
+            connection="geonode_conn_id",
         )
 
         georectify >> rename_file >> geonode_import
@@ -55,7 +60,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
     return dag
 
 
-tif_available = [timf for timf in os.listdir(upload_dir) if timf.endswith('.tif')]
+tif_available = [timf for timf in os.listdir(upload_dir) if timf.endswith(".tif")]
 
 for item in tif_available:
 

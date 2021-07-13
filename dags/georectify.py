@@ -11,7 +11,7 @@ from custom_operator.rename_file import FileRenameOperator
 
 
 WAITING_DELAY_IN_MINUTES = Variable.get("WAITING_DELAY_IN_MINUTES", 3, deserialize_json=True)
-DAG_MAX_RETRIES = Variable.get("DAG_MAX_RETRIES", 5, deserialize_json=True)
+OPERATOR_MAX_RETRIES = Variable.get("OPERATOR_MAX_RETRIES", 5, deserialize_json=True)
 
 upload_dir = Variable.get("UPLOAD_DIR", "/opt/uploads")
 output_dir = Variable.get("OUTPUT_DIR", "/opt/output")
@@ -23,7 +23,8 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
         dag_id,
         schedule_interval=schedule,
         default_args=default_args,
-        max_active_runs=1
+        concurrency=Variable.get("DAG_CONCURRENCY", 16, deserialize_json=True),
+        max_active_runs=Variable.get("MAX_ACTIVE_RUNS", 1, deserialize_json=True),
     )
 
     with dag:
@@ -34,7 +35,7 @@ def create_pipeline(dag_id, schedule, default_args, abs_filepath, filename):
             output_folder=output_dir,
             dag=dag,
             filename=filename,
-            retries=DAG_MAX_RETRIES,
+            retries=OPERATOR_MAX_RETRIES,
             retry_delay=timedelta(minutes=WAITING_DELAY_IN_MINUTES)
         )
 

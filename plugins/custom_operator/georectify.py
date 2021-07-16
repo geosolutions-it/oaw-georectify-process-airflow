@@ -39,18 +39,25 @@ class GeoRectifyOperator(BaseOperator):
         
         return self._geonode_payload()
 
+    @staticmethod
+    def _get_attribute_value(metadata, attribute):
+        value = metadata.get(attribute, None)
+        if value is None:
+            raise AttributeError(f"'{attribute}' metadata attribute is missing!")
+        return value
+
     def _geonode_payload(self):
         metadata = GeoTiff(self.abs_filepath).oaw_metadata_dict()
-        keywords = list(set([k.replace(' ', '') for k in metadata.get('subject', []).replace("&amp;", '&').replace("|", ";").split(';')]))
+        keywords = list(set([k.replace(' ', '') for k in self._get_attribute_value(metadata, 'subject').replace("&amp;", '&').replace("|", ";").split(';')]))
         geonode_json = {
-                "title": metadata.get('title', None).replace("+", " "),
-                "date": metadata.get('date', None),
-                "edition":  metadata.get('edition', None),
-                "abstract": metadata.get('description', None).replace("+", " "),
+                "title": self._get_attribute_value(metadata, 'title').replace("+", " "),
+                "date": self._get_attribute_value(metadata, 'date'),
+                "edition":  self._get_attribute_value(metadata, 'edition'),
+                "abstract": self._get_attribute_value(metadata, 'description').replace("+", " "),
                 #"purpose": metadata.get('source', None),
                 "keywords": keywords,
-                "supplemental_information":  metadata.get('source', None).replace("+", " "),
-                "data_quality_statement": metadata.get('format', None).replace("+", " "),
-                "typename": metadata.get('identifier', None),
+                "supplemental_information":  self._get_attribute_value(metadata, 'source').replace("+", " "),
+                "data_quality_statement": self._get_attribute_value(metadata, 'format').replace("+", " "),
+                "typename": self._get_attribute_value(metadata, 'identifier'),
             }
         return json.dumps(geonode_json)

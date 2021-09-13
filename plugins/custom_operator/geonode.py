@@ -115,8 +115,8 @@ class GeoNodeUploaderOperator(BaseOperator):
         client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
 
         time.sleep(self.call_delay)
-        self.log.info(f"Calling final upload page")
-        client.get(f"http://{conn.host}:{conn.port}/upload/final?id={import_id}")
+        #self.log.info(f"Calling final upload page")
+        #client.get(f"http://{conn.host}:{conn.port}/upload/final?id={import_id}")
 
         self.log.info(f"Layer added in GeoNode")
 

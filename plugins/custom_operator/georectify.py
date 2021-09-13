@@ -3,6 +3,8 @@ from airflow.utils.decorators import apply_defaults
 from geotiflib.georectify import GeoRectifyFactory
 from geotiflib.geotiff import GeoTiff
 from airflow.models.variable import Variable
+import codecs
+from urllib.parse import unquote
 import json
 import ast
 
@@ -40,15 +42,19 @@ class GeoRectifyOperator(BaseOperator):
         return self._geonode_payload()
 
     @staticmethod
-    def _get_attribute_value(metadata, attribute):
+    def _get_attribute_value(metadata, attribute, to_unquote=True):
         value = metadata.get(attribute, None)
         if value is None:
             raise AttributeError(f"'{attribute}' metadata attribute is missing!")
+        value = unquote(value)
+        value = codecs.escape_decode(value)[0].decode()
+        if not to_unquote:
+            value = value.replace("&amp;", "&")
         return value
 
     def _geonode_payload(self):
         metadata = GeoTiff(self.abs_filepath).oaw_metadata_dict()
-        keywords = list(set([k.replace(' ', '') for k in self._get_attribute_value(metadata, 'subject').replace("&amp;", '&').replace("|", ";").split(';')]))
+        keywords = list(set([k.replace(' ', '') for k in self._get_attribute_value(metadata, 'subject', to_unquote=False).replace("&amp;", '&').replace("|", ";").split(';')]))
         geonode_json = {
                 "title": self._get_attribute_value(metadata, 'title').replace("+", " "),
                 "date": self._get_attribute_value(metadata, 'date'),

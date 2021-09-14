@@ -42,10 +42,12 @@ class GeoRectifyOperator(BaseOperator):
         return self._geonode_payload()
 
     @staticmethod
-    def _get_attribute_value(metadata, attribute, to_unquote=True):
+    def _get_attribute_value(metadata, attribute, to_unquote=True, is_required=True):
         value = metadata.get(attribute, None)
-        if value is None:
+        if value is None and is_required:
             raise AttributeError(f"'{attribute}' metadata attribute is missing!")
+        elif value is None:
+            return ""
         value = unquote(value)
         value = codecs.escape_decode(value)[0].decode()
         if not to_unquote:
@@ -54,16 +56,33 @@ class GeoRectifyOperator(BaseOperator):
 
     def _geonode_payload(self):
         metadata = GeoTiff(self.abs_filepath).oaw_metadata_dict()
-        keywords = list(set([k.replace(' ', '') for k in self._get_attribute_value(metadata, 'subject', to_unquote=False).replace("&amp;", '&').replace("|", ";").split(';')]))
+        keywords = list(
+            set(
+                [
+                    k.replace(" ", "")
+                    for k in self._get_attribute_value(
+                        metadata, "subject", to_unquote=False, is_required=self._is_required_field('subject')
+                    )
+                    .replace("&amp;", "&")
+                    .replace("|", ";")
+                    .split(";")
+                ]
+            )
+        )
         geonode_json = {
-                "title": self._get_attribute_value(metadata, 'title').replace("+", " "),
-                "date": self._get_attribute_value(metadata, 'date'),
-                "edition":  self._get_attribute_value(metadata, 'edition'),
-                "abstract": self._get_attribute_value(metadata, 'description').replace("+", " "),
+                "title": self._get_attribute_value(metadata, 'title', is_required=self._is_required_field('title')).replace("+", " "),
+                "date": self._get_attribute_value(metadata, 'date', is_required=self._is_required_field('date')),
+                "edition":  self._get_attribute_value(metadata, 'edition', is_required=self._is_required_field('edition')),
+                "abstract": self._get_attribute_value(metadata, 'description', is_required=self._is_required_field('description')).replace("+", " "),
                 #"purpose": metadata.get('source', None),
                 "keywords": keywords,
-                "supplemental_information":  self._get_attribute_value(metadata, 'source').replace("+", " "),
-                "data_quality_statement": self._get_attribute_value(metadata, 'format').replace("+", " "),
-                "typename": self._get_attribute_value(metadata, 'identifier'),
+                "supplemental_information":  self._get_attribute_value(metadata, 'source', is_required=self._is_required_field('source')).replace("+", " "),
+                "data_quality_statement": self._get_attribute_value(metadata, 'format', is_required=self._is_required_field('format')).replace("+", " "),
+                "typename": self._get_attribute_value(metadata, 'identifier', is_required=self._is_required_field('identifier')),
             }
         return json.dumps(geonode_json)
+
+    @staticmethod
+    def _is_required_field(field):
+        required_fields = ast.literal_eval(Variable.get('OPTIONAL_METADATA', "['edition']"))
+        return field not in required_fields

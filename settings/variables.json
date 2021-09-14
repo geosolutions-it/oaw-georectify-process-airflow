@@ -3,6 +3,7 @@
     "WAITING_DELAY_IN_MINUTES": "3",
     "OPERATOR_MAX_RETRIES": "5",
     "DAG_CONCURRENCY": "16",
-    "MAX_ACTIVE_RUNS": "1"
+    "MAX_ACTIVE_RUNS": "1",
+    "OPTIONAL_METADATA": "['edition']"
 }
 

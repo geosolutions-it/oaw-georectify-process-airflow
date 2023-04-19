@@ -94,9 +94,13 @@ class GeoNodeUploaderOperator(BaseOperator):
             params["xml_file"].close()
 
         if response.status_code > 201:
-            raise Exception("An error has occured with the communication with GeoNode: {response.json()}")
+            raise Exception(f"An error has occured with the communication with GeoNode: {response.json()}")
 
+        self.log.info(response.json())
         self.log.info("Getting import_id")
+        if response.json().get("status", '') == "finished":
+            self.log.info("Upload process completed")        
+            return
         time.sleep(self.call_delay)                
         import_id = int(response.json()["redirect_to"].split("?id=")[1])
         self.log.info(f"ImportID found with ID: {import_id}")

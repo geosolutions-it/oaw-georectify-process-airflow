@@ -77,7 +77,7 @@ class GeoNodeUploaderOperator(BaseOperator):
             )
 
             response = client.put(
-                f"http://{conn.host}:{conn.port}/api/v2/uploads/upload/",
+                f"https://{conn.host}/api/v2/uploads/upload/",
                 auth=HTTPBasicAuth(conn.login, conn.password),
                 data=params,
                 files=files,

@@ -93,7 +93,7 @@ class GeoNodeUploaderOperator(BaseOperator):
         if isinstance(params.get("xml_file"), IOBase):
             params["xml_file"].close()
 
-        if response.status_code != 201:
+        if response.status_code > 201:
             raise Exception("An error has occured with the communication with GeoNode: {response.json()}")
 
         self.log.info("Getting import_id")

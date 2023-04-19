@@ -150,4 +150,3 @@
     geonode:
       external:
         name: ${GEONODE_NETWORK}
-        external: true

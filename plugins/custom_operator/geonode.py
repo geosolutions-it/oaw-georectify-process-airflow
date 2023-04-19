@@ -73,11 +73,11 @@ class GeoNodeUploaderOperator(BaseOperator):
                     params[name] = os.path.basename(value.name)
 
             self.log.info(
-                f"Sending PUT request to geonode: http://{conn.host}:{conn.port}/api/v2/uploads/upload/"
+                f"Sending post request to geonode: https://{conn.host}/api/v2/uploads/upload/"
             )
 
-            response = client.put(
-                f"http://{conn.host}:{conn.port}/api/v2/uploads/upload/",
+            response = client.post(
+                f"https://{conn.host}/api/v2/uploads/upload/",
                 auth=HTTPBasicAuth(conn.login, conn.password),
                 data=params,
                 files=files,
@@ -103,7 +103,7 @@ class GeoNodeUploaderOperator(BaseOperator):
 
         time.sleep(self.call_delay)
         self.log.info(f"Getting upload_list")
-        upload_response = client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/")
+        upload_response = client.get(f"https://{conn.host}/api/v2/uploads/")
 
         self.log.info(f"Extraction of upload_id")
 
@@ -112,7 +112,7 @@ class GeoNodeUploaderOperator(BaseOperator):
         self.log.info(f"UploadID found {upload_id}")
 
         self.log.info(f"Calling upload detail page")
-        client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
+        client.get(f"https://{conn.host}/api/v2/uploads/{upload_id}")
 
         time.sleep(self.call_delay)
         #self.log.info(f"Calling final upload page")
@@ -128,7 +128,7 @@ class GeoNodeUploaderOperator(BaseOperator):
         return response
 
     def check_status(self, client, upload_id, conn):
-        r = client.get(f"http://{conn.host}:{conn.port}/api/v2/uploads/{upload_id}")
+        r = client.get(f"https://{conn.host}/api/v2/uploads/{upload_id}")
         state = r.json()["upload"]["state"]
 
         if state in ['INVALID', 'PENDING', 'WAITING']:

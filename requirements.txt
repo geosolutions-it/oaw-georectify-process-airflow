@@ -1,3 +1,3 @@
 black
 git+https://github.com/geosolutions-it/oaw-georectify-process-alg.git@master
-json2xml
+json2xml==3.16.0

@@ -41,6 +41,9 @@
     &airflow-common
     networks:
       - geonode
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: custom/airflow:latest
     environment:
       &airflow-common-env
@@ -146,4 +149,5 @@
   networks: 
     geonode:
       external:
-        name: ${GEONODE_NETWORK}  
+        name: ${GEONODE_NETWORK}
+        external: true
